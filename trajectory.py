@@ -49,7 +49,9 @@ Represents a sequence of geographic coordinates (latitude, longitude) and provid
 methods for trajectory analysis, manipulation, and export.
 """
 
-def __init__(self, points: Optional[List[TrajectoryPoint]] = None):
+def __init__(self, points: Optional[List[TrajectoryPoint]] = None,
+             name: str = "Trajectory",
+             description: str = ""):
     """
     Initialize a trajectory.
     
@@ -57,8 +59,14 @@ def __init__(self, points: Optional[List[TrajectoryPoint]] = None):
     -----------
     points : List[TrajectoryPoint], optional
         Initial list of trajectory points
+    name : str
+        Name of the trajectory (default: "Trajectory")
+    description : str
+        Description of the trajectory (default: "")
     """
     self._points: List[TrajectoryPoint] = points if points is not None else []
+    self._name: str = name
+    self._description: str = description
     self._validate()
 
 def _validate(self):
@@ -70,7 +78,9 @@ def _validate(self):
 # ========== Construction Methods ==========
 
 @classmethod
-def from_coordinates(cls, coordinates: List[Tuple[float, float]]) -> 'Trajectory':
+def from_coordinates(cls, coordinates: List[Tuple[float, float]],
+                    name: str = "Trajectory",
+                    description: str = "") -> 'Trajectory':
     """
     Create trajectory from list of (lat, lon) tuples.
     
@@ -78,20 +88,26 @@ def from_coordinates(cls, coordinates: List[Tuple[float, float]]) -> 'Trajectory
     -----------
     coordinates : List[Tuple[float, float]]
         List of (latitude, longitude) tuples
+    name : str
+        Name of the trajectory (default: "Trajectory")
+    description : str
+        Description of the trajectory (default: "")
     
     Returns:
     --------
     Trajectory : New trajectory instance
     """
     points = [TrajectoryPoint(lat, lon) for lat, lon in coordinates]
-    return cls(points)
+    return cls(points, name=name, description=description)
 
 @classmethod
 def from_dataframe(cls, df: pd.DataFrame, 
                   lat_col: str = 'latitude',
                   lon_col: str = 'longitude',
                   time_col: Optional[str] = None,
-                  alt_col: Optional[str] = None) -> 'Trajectory':
+                  alt_col: Optional[str] = None,
+                  name: str = "Trajectory",
+                  description: str = "") -> 'Trajectory':
     """
     Create trajectory from pandas DataFrame.
     
@@ -107,6 +123,10 @@ def from_dataframe(cls, df: pd.DataFrame,
         Name of timestamp column
     alt_col : str, optional
         Name of altitude column
+    name : str
+        Name of the trajectory (default: "Trajectory")
+    description : str
+        Description of the trajectory (default: "")
     
     Returns:
     --------
@@ -125,7 +145,7 @@ def from_dataframe(cls, df: pd.DataFrame,
         )
         points.append(point)
     
-    return cls(points)
+    return cls(points, name=name, description=description)
 
 # ========== Basic Operations ==========
 
@@ -149,6 +169,28 @@ def clear(self) -> None:
     """Remove all points from the trajectory."""
     self._points.clear()
 
+# ========== Property Access Methods ==========
+
+@property
+def name(self) -> str:
+    """Get the trajectory name."""
+    return self._name
+
+@name.setter
+def name(self, value: str) -> None:
+    """Set the trajectory name."""
+    self._name = value
+
+@property
+def description(self) -> str:
+    """Get the trajectory description."""
+    return self._description
+
+@description.setter
+def description(self, value: str) -> None:
+    """Set the trajectory description."""
+    self._description = value
+
 # ========== Access Methods ==========
 
 def __len__(self) -> int:
@@ -165,7 +207,7 @@ def __iter__(self) -> Iterator[TrajectoryPoint]:
 
 def __repr__(self) -> str:
     """String representation of the trajectory."""
-    return f"Trajectory({len(self)} points)"
+    return f"Trajectory('{self._name}', {len(self)} points)"
 
 def get_points(self) -> List[TrajectoryPoint]:
     """Return a copy of all points in the trajectory."""
@@ -278,7 +320,7 @@ def simplify(self, tolerance: float = 0.0001) -> 'Trajectory':
     Trajectory : Simplified trajectory
     """
     if len(self._points) < 3:
-        return Trajectory(self._points.copy())
+        return Trajectory(self._points.copy(), name=self._name, description=self._description)
     
     line = LineString([p.to_xy() for p in self._points])
     simplified_line = line.simplify(tolerance, preserve_topology=True)
@@ -296,7 +338,9 @@ def simplify(self, tolerance: float = 0.0001) -> 'Trajectory':
             altitude=closest_point.altitude
         ))
     
-    return Trajectory(simplified_points)
+    return Trajectory(simplified_points, 
+                    name=f"{self._name} (simplified)",
+                    description=self._description)
 
 def subsample(self, step: int) -> 'Trajectory':
     """
@@ -311,7 +355,9 @@ def subsample(self, step: int) -> 'Trajectory':
     --------
     Trajectory : Subsampled trajectory
     """
-    return Trajectory(self._points[::step])
+    return Trajectory(self._points[::step],
+                    name=f"{self._name} (subsampled)",
+                    description=self._description)
 
 def interpolate(self, num_points: int) -> 'Trajectory':
     """
@@ -340,7 +386,9 @@ def interpolate(self, num_points: int) -> 'Trajectory':
             longitude=point_on_line.x
         ))
     
-    return Trajectory(interpolated_points)
+    return Trajectory(interpolated_points,
+                    name=f"{self._name} (interpolated)",
+                    description=self._description)
 
 # ========== Analysis Methods ==========
 
@@ -422,8 +470,8 @@ def to_linestring(self) -> LineString:
     """
     return LineString([p.to_xy() for p in self._points])
 
-def to_kml(self, filename: str, name: str = "Trajectory",
-           description: str = "Geographic trajectory") -> str:
+def to_kml(self, filename: str, name: Optional[str] = None,
+           description: Optional[str] = None) -> str:
     """
     Export trajectory to KML file.
     
@@ -431,22 +479,26 @@ def to_kml(self, filename: str, name: str = "Trajectory",
     -----------
     filename : str
         Output KML filename
-    name : str
-        Name for the trajectory
-    description : str
-        Description for the trajectory
+    name : str, optional
+        Name for the trajectory (uses instance name if not provided)
+    description : str, optional
+        Description for the trajectory (uses instance description if not provided)
     
     Returns:
     --------
     str : Path to created KML file
     """
+    # Use instance name and description if not provided
+    kml_name = name if name is not None else self._name
+    kml_desc = description if description is not None else self._description
+    
     k = kml.KML()
     ns = '{http://www.opengis.net/kml/2.2}'
     
-    doc = kml.Document(ns, 'docid', name, description)
+    doc = kml.Document(ns, 'docid', kml_name, kml_desc)
     k.append(doc)
     
-    placemark = kml.Placemark(ns, 'pm1', name, description)
+    placemark = kml.Placemark(ns, 'pm1', kml_name, kml_desc)
     placemark.geometry = self.to_linestring()
     doc.append(placemark)
     
@@ -472,6 +524,8 @@ def to_geojson(self) -> dict:
             "coordinates": coordinates
         },
         "properties": {
+            "name": self._name,
+            "description": self._description,
             "length": self.length(),
             "num_points": len(self),
             "duration": self.duration()
@@ -485,7 +539,7 @@ if **name** == “**main**”:
 print(”=== Trajectory ADT Example ===\n”)
 
 ```
-# Create trajectory from coordinates
+# Create trajectory from coordinates with name and description
 coords = [
     (37.7749, -122.4194),  # San Francisco
     (37.7849, -122.4094),
@@ -493,9 +547,14 @@ coords = [
     (37.8049, -122.3894)
 ]
 
-traj = Trajectory.from_coordinates(coords)
-print(f"Created trajectory with {len(traj)} points")
-print(f"Trajectory representation: {traj}")
+traj = Trajectory.from_coordinates(
+    coords,
+    name="San Francisco Route",
+    description="A scenic route through downtown SF"
+)
+print(f"Created trajectory: {traj}")
+print(f"Name: {traj.name}")
+print(f"Description: {traj.description}")
 
 # Access points
 print(f"\nFirst point: {traj[0].to_tuple()}")
@@ -507,14 +566,17 @@ print(f"Bounding box: {traj.get_bounds()}")
 print(f"Center point: {traj.get_center()}")
 print(f"Is closed: {traj.is_closed()}")
 
-# Simplify trajectory
-simplified = traj.simplify(tolerance=0.001)
-print(f"\nSimplified trajectory: {len(simplified)} points")
+# Modify name and description
+traj.description = "Updated: A scenic route through downtown San Francisco"
+print(f"\nUpdated description: {traj.description}")
 
-# Export to KML
-kml_file = traj.to_kml('trajectory_output.kml', 
-                       name='San Francisco Route',
-                       description='Sample trajectory through SF')
+# Simplify trajectory (preserves name and description)
+simplified = traj.simplify(tolerance=0.001)
+print(f"\nSimplified trajectory: {simplified}")
+print(f"Simplified name: {simplified.name}")
+
+# Export to KML (uses instance name and description by default)
+kml_file = traj.to_kml('trajectory_output.kml')
 print(f"\nExported to KML: {kml_file}")
 
 # Convert to DataFrame
@@ -522,9 +584,20 @@ df = traj.to_dataframe()
 print("\nTrajectory as DataFrame:")
 print(df)
 
-# Create trajectory from DataFrame
-traj2 = Trajectory.from_dataframe(df)
-print(f"\nRecreated trajectory from DataFrame: {len(traj2)} points")
+# Create trajectory from DataFrame with custom name
+traj2 = Trajectory.from_dataframe(
+    df,
+    name="Recreated Route",
+    description="Trajectory recreated from DataFrame"
+)
+print(f"\nRecreated trajectory: {traj2}")
+
+# Export to GeoJSON (includes name and description)
+geojson = traj.to_geojson()
+print("\nGeoJSON properties:")
+print(f"  Name: {geojson['properties']['name']}")
+print(f"  Description: {geojson['properties']['description']}")
+print(f"  Length: {geojson['properties']['length']:.2f}m")
 
 print("\n=== Example Complete ===")
 ```
