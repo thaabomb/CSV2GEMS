@@ -6,4 +6,4 @@ We'd like to be able to import an arbitrary CSV file into GEMS GDA for analysis.
 - Solution shall import an arbitrary CSV.
   - Solution shall allow the user to specify which line contains parameter names.
   - Solution shall allow the user to specify which line is the first line of data.
-  - Solution shall allow the user to soecify which line is the last line of data.
+  - Solution shall allow the user to specify which line is the last line of data.
