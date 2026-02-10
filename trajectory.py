@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-“””
+"""
 Abstract Data Type for 2D Trajectory with Latitude and Longitude.
 
 This module provides a Trajectory class that represents a sequence of geographic
 coordinates and provides methods for trajectory analysis and manipulation.
-“””
+"""
 
 from typing import List, Tuple, Optional, Iterator
 from dataclasses import dataclass
