@@ -5,16 +5,22 @@ def HarrysLapTimer2DataFrame(pathToHarrysLaptimerFile):
 	
   df = pd.read_csv(pathToHarrysLaptimerFile, skiprows=COUNT_OF_ROWS_TO_SKIP)
 	
-  for timeString in df['TIME_LAP']:
-    time_string_to_deconds(timeString)
 	
-	 
   return df
+
+def TimeString2Seconds(timeString):
+	import datetime
 	
-
-
-def time_string_to_seconds(time_string):
-	from datetime import datetime, timedelta
-	time_obj = datetime.strptime(time_string, "%H:%M:%S")
-  seconds = timedelta(hours=time_obj.hour, minutes=time_obj.minute, seconds=time_obj.second).total_seconds()
-  return seconds
+	SECONDS_PER_HOUR = 3600
+	SECONDS_PER_MINUTE = 60
+	MICROSECONDS_PER_SECOND = 1000000
+	FORMAT="%M:%S.%f"
+	dtObj = datetime.datetime.strptime(timeString, FORMAT)
+	
+	seconds_hours = dtObj.hour * SECONDS_PER_HOUR
+	seconds_minutes = dtObj.minute * SECONDS_PER_MINUTE
+	seconds_seconds = dtObj.second
+	seconds_microseconds = dtObj.microsecond / MICROSECONDS_PER_SECOND
+	seconds = seconds_hours + seconds_minutes + seconds_seconds + seconds_microseconds
+	
+	return seconds
