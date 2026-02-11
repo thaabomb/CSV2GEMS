@@ -44,4 +44,15 @@ def LatLongDeg2Rad(DataFrame):
 	DataFrame[FIELDNAME_LATITUDE_RAD] = DataFrame[FIELDNAME_LATITUDE_DEG] * RADIANS_PER_DEGREE
 	DataFrame[FIELDNAME_LONGITUDE_RAD] = DataFrame[FIELDNAME_LONGITUDE_DEG] * RADIANS_PER_DEGREE
 	return DataFrame
+
+
+def HarrysLapTimer2GEMS(pathToHarrysLapTimerFile):
+	dataFrame001 = HarrysLapTimer2DataFrame(pathToHarrysLapTimerFile)
 	
+	dataFrame002 = TIME_LAP2Seconds(dataFrame001)
+	
+	dataFrame003 = LatLongDeg2Rad(dataFrame002)
+	
+	dataFrame004 = dataFrame003[["TIME_LAP_SEC","LATITUDE_RAD","LONGITUDE_RAD"]]
+	
+	return dataFrame004
