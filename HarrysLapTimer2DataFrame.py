@@ -24,3 +24,24 @@ def TimeString2Seconds(timeString):
 	seconds = seconds_hours + seconds_minutes + seconds_seconds + seconds_microseconds
 	
 	return seconds
+
+
+def TIME_LAP2Seconds(dataFrame):
+	FIELDNAME_TIMESTRING = "TIME_LAP"
+	FIELDNAME_TIMESECONDS = "TIME_LAP_SEC"
+	dataFrame[FIELDNAME_TIMESECONDS] = dataFrame[FIELDNAME_TIMESTRING].map(TimeString2Seconds)
+	return dataFrame
+
+
+def LatLongDeg2Rad(DataFrame):
+	import math
+	RADIANS_SUFFIX = "_RAD"
+	FIELDNAME_LATITUDE_DEG = "LATITUDE"
+	FIELDNAME_LATITUDE_RAD = FIELDNAME_LATITUDE_DEG + RADIANS_SUFFIX
+	FIELDNAME_LONGITUDE_DEG = "LONGITUDE"
+	FIELDNAME_LONGITUDE_RAD = FIELDNAME_LONGITUDE_DEG + RADIANS_SUFFIX
+	RADIANS_PER_DEGREE = math.pi / 180
+	DataFrame[FIELDNAME_LATITUDE_RAD] = DataFrame[FIELDNAME_LATITUDE_DEG] * RADIANS_PER_DEGREE
+	DataFrame[FIELDNAME_LONGITUDE_RAD] = DataFrame[FIELDNAME_LONGITUDE_DEG] * RADIANS_PER_DEGREE
+	return DataFrame
+	
