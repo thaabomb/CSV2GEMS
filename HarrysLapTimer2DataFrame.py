@@ -53,6 +53,6 @@ def HarrysLapTimer2GEMS(pathToHarrysLapTimerFile):
 	
 	dataFrame003 = LatLongDeg2Rad(dataFrame002)
 	
-	dataFrame004 = dataFrame003[["TIME_LAP_SEC","LATITUDE_RAD","LONGITUDE_RAD"]]
+	dataFrame004 = dataFrame003[["TIME_LAP_SEC","LATITUDE_RAD","LONGITUDE_RAD","SPEED_MPH","HEIGHT_FT","HEADING_DEG","DISTANCE_MILE","LATERALG","LINEALG"]]
 	
 	return dataFrame004
